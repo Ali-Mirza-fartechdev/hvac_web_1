@@ -5,10 +5,12 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Button from './Button'
 import { Sections, Media } from './Sections'
 import { useImage, pathKey } from '../hooks/useImages'
+import { getSeo, applyHead } from '../seo'
 import { crumbs } from '../data/site'
 import { prefersReducedMotion } from '../hooks/useReducedMotion'
 
 gsap.registerPlugin(ScrollTrigger)
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 const HeroScene = lazy(() => import('./HeroScene'))
 
 function Title({ text }) {
@@ -67,33 +69,34 @@ function Hero({ hero, path }) {
 export default function Page({ path, content }) {
   const root = useRef(null)
 
-  useEffect(() => {
-    document.title = path === '/' ? 'AERIS | Comfort, Elevated' : `${content.hero.title.split(':')[0]} | AERIS`
-    let m = document.querySelector('meta[name="description"]')
-    if (!m) { m = document.createElement('meta'); m.name = 'description'; document.head.appendChild(m) }
-    m.content = content.seo || ''
-  }, [path, content])
+  useEffect(() => { applyHead(getSeo(path)) }, [path])
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (prefersReducedMotion()) return undefined
     const ctx = gsap.context(() => {
-      // One orchestrated moment: the hero headline rises word by word.
-      gsap.from('.hero-title .wi', { yPercent: 115, duration: 1.1, ease: 'power4.out', stagger: 0.07, delay: 0.1 })
-      gsap.from('.hero-text, .hero .btn-row, .crumbs, .hero-card', { opacity: 0, y: 18, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.5 })
+      // 01/02: short, coordinated hero entrance (under a second in total, nothing waits on it)
+      gsap.from('.hero-title .wi', { yPercent: 115, duration: 0.8, ease: 'power3.out', stagger: 0.06, delay: 0.05 })
+      gsap.from('.hero-text, .hero .btn-row, .crumbs, .hero-card', { opacity: 0, y: 14, duration: 0.65, ease: 'power2.out', stagger: 0.08, delay: 0.3 })
 
-      // Hero recedes as you scroll: content drifts up, the scene pushes in.
+      // existing: hero recedes as you scroll (kept as is)
       gsap.to('.hero-content', { yPercent: -10, opacity: 0.15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } })
       gsap.to('.hero-scene', { scale: 1.12, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } })
 
-      // Everything marked data-reveal settles in as it enters view.
-      gsap.set('[data-reveal]', { opacity: 0, y: 26 })
-      ScrollTrigger.batch('[data-reveal]', {
+      // 02: major section headings rise out of a clipped line
+      gsap.utils.toArray('.h2[data-reveal]').forEach((el) => {
+        gsap.fromTo(el, { clipPath: 'inset(0 0 100% 0)', y: 16 }, { clipPath: 'inset(0 0 -14% 0)', y: 0, duration: 0.7, ease: 'power3.out', clearProps: 'clipPath', scrollTrigger: { trigger: el, start: 'top 90%', once: true } })
+      })
+
+      // 03: one reveal language for everything else: small rise + fade, grouped, played once
+      gsap.set('[data-reveal]:not(.h2)', { opacity: 0, y: 16 })
+      ScrollTrigger.batch('[data-reveal]:not(.h2)', {
         start: 'top 90%',
         once: true,
-        onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, overwrite: true }),
+        onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', stagger: 0.06, overwrite: true }),
       })
     }, root)
     const refresh = () => ScrollTrigger.refresh()
+    requestAnimationFrame(refresh)
     document.fonts?.ready.then(refresh)
     window.addEventListener('load', refresh)
     return () => { window.removeEventListener('load', refresh); ctx.revert() }

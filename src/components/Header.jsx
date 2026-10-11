@@ -4,6 +4,8 @@ import { NAV, SITE, groupOf } from '../data/site'
 import Button from './Button'
 import { useLenis } from '../hooks/useSmoothScroll'
 
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
+
 // iOS tab-bar style glass nav: one frosted pill slides to whatever you hover or focus,
 // and settles back on the current section when you leave.
 function GlassNav({ active }) {
@@ -25,7 +27,7 @@ function GlassNav({ active }) {
     p.style.opacity = '1'
   }, [target])
 
-  useLayoutEffect(place, [place])
+  useIsoLayoutEffect(place, [place])
   useEffect(() => {
     const id = requestAnimationFrame(() => setReady(true))
     const ro = new ResizeObserver(place)

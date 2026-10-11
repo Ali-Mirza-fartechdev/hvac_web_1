@@ -4,6 +4,10 @@ export const SITE = {
   tagline: 'Architectural-grade climate engineering',
   phone: '(800) 582-AERIS',
   phoneHref: 'tel:+18005822374',
+  phoneE164: '+1-800-582-2374',
+  // Set VITE_SITE_URL in Vercel (Settings > Environment Variables) once the real domain is connected.
+  url: (import.meta.env?.VITE_SITE_URL || 'https://hvac-web-1.vercel.app').replace(/\/$/, ''),
+  area: 'New York City',
 }
 
 // parent drives breadcrumbs + "children" sections. group drives the active nav pill.

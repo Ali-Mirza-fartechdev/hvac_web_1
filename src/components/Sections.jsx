@@ -3,13 +3,24 @@ import { Link } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Button from './Button'
-import { childrenOf, byPath } from '../data/site'
+import { childrenOf } from '../data/site'
+import { CONTENT } from '../data/content'
 import { prefersReducedMotion } from '../hooks/useReducedMotion'
 import { useImage, slug } from '../hooks/useImages'
 
 gsap.registerPlugin(ScrollTrigger)
 
 /* ---------- shared bits ---------- */
+
+// Supports [link text](/internal-path) inside copy so pages cross-link naturally.
+export function Rich({ text }) {
+  const parts = String(text).split(/(\[[^\]]+\]\([^)]+\))/g)
+  return parts.map((part, i) => {
+    const m = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/)
+    if (!m) return part
+    return m[2].startsWith('/') ? <Link key={i} className="inline-link" to={m[2]}>{m[1]}</Link> : <a key={i} className="inline-link" href={m[2]}>{m[1]}</a>
+  })
+}
 
 // Cards follow the pointer with a soft spotlight and a few degrees of tilt (fine pointers only).
 function useTilt() {
@@ -22,8 +33,8 @@ function useTilt() {
     const y = (e.clientY - r.top) / r.height
     el.style.setProperty('--mx', `${x * 100}%`)
     el.style.setProperty('--my', `${y * 100}%`)
-    el.style.setProperty('--rx', `${(0.5 - y) * 5}deg`)
-    el.style.setProperty('--ry', `${(x - 0.5) * 6}deg`)
+    el.style.setProperty('--rx', `${(0.5 - y) * 3}deg`)
+    el.style.setProperty('--ry', `${(x - 0.5) * 3.5}deg`)
   }
   const onLeave = () => {
     const el = ref.current
@@ -42,14 +53,15 @@ export function Media({ media, index = 0, ratio = '4 / 3' }) {
   const src = media?.src || mapped
   useEffect(() => {
     if (prefersReducedMotion() || !ref.current) return undefined
+    if (!window.matchMedia('(hover: hover) and (min-width: 900px)').matches) return undefined // no parallax on touch / small screens
     const inner = ref.current.querySelector('.media-inner')
-    const tween = gsap.fromTo(inner, { yPercent: -7 }, { yPercent: 7, ease: 'none', scrollTrigger: { trigger: ref.current, start: 'top bottom', end: 'bottom top', scrub: true } })
+    const tween = gsap.fromTo(inner, { yPercent: -3.5 }, { yPercent: 3.5, ease: 'none', scrollTrigger: { trigger: ref.current, start: 'top bottom', end: 'bottom top', scrub: true } })
     return () => { tween.scrollTrigger?.kill(); tween.kill() }
   }, [])
   const hue = 205 + ((index * 17) % 40)
   return (
     <figure ref={ref} className="media" style={{ aspectRatio: ratio, '--hue': hue }}>
-      <div className="media-inner" style={src ? { backgroundImage: `url(${src})` } : undefined}>
+      <div className="media-inner" style={src ? { backgroundImage: `url(${src})` } : undefined} role={src && media?.label ? 'img' : undefined} aria-label={src ? media?.label : undefined}>
         {!src && media?.label && <figcaption>{media.label}</figcaption>}
       </div>
     </figure>
@@ -108,14 +120,14 @@ function Card({ item, index, layout }) {
         {item.tag && <p className="tag">{item.tag}</p>}
         <h3 className="h3">{item.title}</h3>
         <p>{item.text}</p>
-        {item.to && <span className="text-link">{item.cta || 'Learn more'}</span>}
+        {(item.to || item.href) && <span className="text-link">{item.cta || 'Learn more'}</span>}
       </div>
     </>
   )
   const cls = `card ${item.media ? 'has-media' : ''}`
   return (
     <div className="card-wrap" data-reveal>
-      {item.to ? <Link to={item.to} className={cls} {...tilt}>{inner}</Link> : <article className={cls} {...tilt}>{inner}</article>}
+      {item.href ? <a href={item.href} className={cls} {...tilt}>{inner}</a> : item.to ? <Link to={item.to} className={cls} {...tilt}>{inner}</Link> : <article className={cls} {...tilt}>{inner}</article>}
     </div>
   )
 }
@@ -197,7 +209,7 @@ function Faq({ s }) {
         {s.items.map((it) => (
           <details key={it.q} data-reveal>
             <summary>{it.q}</summary>
-            <div className="faq-a"><div><p>{it.a}</p></div></div>
+            <div className="faq-a"><div><p><Rich text={it.a} /></p></div></div>
           </details>
         ))}
       </div>
@@ -242,8 +254,36 @@ function Prose({ s }) {
     <Section tone={s.tone}>
       <div className="prose">
         <h2 className="h2" data-reveal>{s.heading}</h2>
-        {s.paragraphs.map((p, i) => <p key={i} data-reveal>{p}</p>)}
+        {s.paragraphs.map((p, i) => <p key={i} data-reveal><Rich text={p} /></p>)}
       </div>
+    </Section>
+  )
+}
+
+function Doc({ s }) {
+  return (
+    <Section tone={s.tone}>
+      <div className="prose doc">
+        {s.heading && <h2 className="h2" data-reveal>{s.heading}</h2>}
+        {s.intro && <p className="lede" data-reveal><Rich text={s.intro} /></p>}
+        {s.blocks.map((b, i) => (
+          <div key={i} className="doc-block" data-reveal>
+            {b.h && <h3 className="h3">{b.h}</h3>}
+            {b.p?.map((t, j) => <p key={j}><Rich text={t} /></p>)}
+            {b.ul && <ul className="ticks">{b.ul.map((li) => <li key={li}><Rich text={li} /></li>)}</ul>}
+          </div>
+        ))}
+      </div>
+    </Section>
+  )
+}
+
+function Chips({ s }) {
+  return (
+    <Section tone={s.tone}>
+      <Head heading={s.heading} text={s.text} />
+      <ul className="chips" data-reveal>{s.items.map((c) => <li key={c}>{c}</li>)}</ul>
+      {s.note && <p className="chips-note" data-reveal><Rich text={s.note} /></p>}
     </Section>
   )
 }
@@ -256,7 +296,7 @@ function Children({ s, path }) {
       <Head heading={s.heading} />
       <div className="card-grid layout-grid">
         {kids.map((k, i) => (
-          <Card key={k.path} index={i} item={{ title: k.title, text: byPath[k.parent]?.title ? `Part of ${byPath[k.parent].label}` : '', to: k.path, cta: 'Open page' }} />
+          <Card key={k.path} index={i} item={{ title: k.title, text: CONTENT[k.path]?.hero.text || '', to: k.path, cta: 'Open page' }} />
         ))}
       </div>
     </Section>
@@ -307,7 +347,7 @@ function EstimateForm({ title }) {
       <label>Phone (optional)<input name="phone" type="tel" autoComplete="tel" /></label>
       <label>What do you need?<textarea name="details" rows="3" placeholder="New system, replacement, repair, air quality..." /></label>
       <button className="btn btn-solid" type="submit" disabled={state === 'sending'}>{state === 'sending' ? 'Sending...' : 'Submit Consultation Request'}</button>
-      <p className="form-note" role="status">
+      <p key={state} className="form-note" data-state={state} role="status">
         {state === 'ok' && 'Thanks. An AERIS engineer will reply within one business day.'}
         {state === 'error' && 'Something went wrong sending your request. Please call us or try again.'}
         {state === 'idle' && 'We reply with a written scope, not a sales call.'}
@@ -330,7 +370,7 @@ function FormSection({ s }) {
   )
 }
 
-const MAP = { cards: Cards, paths: Paths, stats: Stats, steps: Steps, faq: Faq, quotes: Quotes, split: Split, prose: Prose, children: Children, cta: Cta, form: FormSection }
+const MAP = { doc: Doc, chips: Chips, cards: Cards, paths: Paths, stats: Stats, steps: Steps, faq: Faq, quotes: Quotes, split: Split, prose: Prose, children: Children, cta: Cta, form: FormSection }
 
 export function Sections({ sections, path }) {
   return sections.map((s, i) => {

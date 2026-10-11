@@ -1,11 +1,11 @@
 # AERIS website
 
-React + Three.js + GSAP build of the AERIS Figma design. Desktop and mobile responsive, ready to deploy on Vercel.
+React + Three.js + GSAP build of the AERIS Figma design. Responsive (desktop and mobile), SEO-optimised, deployed on Vercel.
 
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm run build      # production build in dist/
+npm run build      # client build + SSR build + prerender into dist/
 ```
 
 ## Pages (same hierarchy as the Figma file)
@@ -27,71 +27,79 @@ npm run build      # production build in dist/
 /contact                                       Contact Us
 /request-estimate                              Request an Estimate
 /privacy-policy                                Privacy Policy
-*                                              404 - Page Not Found
+404                                            404 - Page Not Found
 ```
 
-The hierarchy lives in `src/data/site.js` (routes, header nav, footer, breadcrumbs, active nav section). Page content lives in `src/data/content.js`.
+Hierarchy, navigation, footer and breadcrumbs: `src/data/site.js`. All page copy: `src/data/content.js` (use `[text](/path)` for internal links).
 
-## What is built
+## SEO
 
-- **Glass header.** Frosted pill with backdrop blur. It tightens on scroll. Hover or focus a link and one glass pill slides to it with a spring (like the iOS tab bar), then settles on the current section. Mobile gets a full-screen glass menu with staggered links.
-- **Three.js hero.** `src/components/HeroScene.jsx` is a GPU airflow field (custom shader) that bends around the cursor and lifts on scroll. Home is dark and dense, inner pages use a lighter compact version. It pauses when off screen, lowers the point count and pixel ratio on phones, renders a still frame for reduced-motion users, and the page still works if WebGL fails.
-- **Scroll animation.** Lenis smooth scroll feeding GSAP ScrollTrigger: hero headline rises word by word, hero recedes on scroll, content settles in as it enters view, number counters, image parallax.
-- **Apple-style details.** Cards tilt and carry a cursor spotlight on mouse devices, press states on buttons, spring easing, animated FAQ.
-- **Accessibility.** Skip link, visible focus, keyboard-operable nav, reduced-motion support, semantic landmarks.
+- **Prerendered HTML.** `npm run build` writes a static HTML file for every route (full content, no JavaScript needed) plus `404.html`, `sitemap.xml` and `robots.txt`. Vercel serves these directly, so crawlers and link previews see real content and unknown URLs return a real 404.
+- **Per page:** unique title (under about 60 characters), meta description, canonical URL, Open Graph and Twitter tags, one H1, descriptive headings, internal links in the copy.
+- **Structured data (JSON-LD):** `HVACBusiness` and `WebSite` (home), `BreadcrumbList` (inner pages), `FAQPage` (pages with FAQs), `Service` (service pages), `Article` (dossier), `ContactPage` (contact).
+- **Set your real domain.** In Vercel > Settings > Environment Variables add `VITE_SITE_URL=https://your-domain.com` and redeploy. It feeds canonical URLs, the sitemap, robots.txt and structured data. Until then it uses `https://hvac-web-1.vercel.app`.
+- **After launch:** add the site to Google Search Console, submit `/sitemap.xml`, and add the business to Google Business Profile.
+- **Open Graph image:** `public/og.png` (1200x630). Replace it with a branded image when you have one.
 
-## Content status (read before launch)
+## Motion
 
-| Page | Status |
-|---|---|
-| Home, Services Overview | Headings and structure from the Figma screens. Body copy is close but should be checked against Figma. |
-| All other pages | Structure from the Figma hierarchy, **draft copy**. |
-| Anything saying `[placeholder]` | Must be replaced (testimonials, some FAQ answers, privacy policy, company story). |
+Additive and restrained, following the "Premium Animation Optimization" brief:
 
-`Terms of Service` and `Compliance & Licensure` appear in the footer as plain text because the Figma file has no pages for them.
+- Hero: headline rises word by word, supporting copy and buttons follow (under one second total); hero photo settles in. Hero recedes gently on scroll.
+- Section headings rise out of a clipped line; other content uses one reveal (small rise and fade, grouped, once).
+- Images: very light parallax, only on wide screens with a mouse. None on touch.
+- Header: frosted glass pill with a sliding hover/active indicator (260 ms, no bounce). Mobile gets a full-screen glass menu.
+- Buttons lift 1 px on hover and press down; cards lift 3 px, tilt up to 3 degrees and scale their image to 1.02.
+- Numbers count up once. Footer groups reveal; the phone link is never delayed. Thin scroll-progress line. 240 ms page fade.
+- Forms: focus ring, inline invalid state, sending state, success and error messages (always text, never motion only).
+- `prefers-reduced-motion`: smooth scrolling, parallax, reveals and the 3D scene's motion are turned off.
 
-### Pull the real text and images from Figma
+## Images
 
-```
-cp .env.example .env      # add FIGMA_TOKEN (Figma > Settings > Security > personal access token)
-npm run figma:extract
-```
+Put images in `public/images/` and list them in `public/images/manifest.json`, or run `npm run figma:extract` to pull the originals from the Figma file (needs `FIGMA_TOKEN` in `.env`). See `public/images/README.md`. Hero photos use `hero-<page>` keys; cards use a slug of the card title. Cards without an image show a quiet gradient.
 
-This downloads the **original image files** into `public/images/` and writes `public/images/manifest.json`; the site reads that manifest at runtime, so hero photos and card images appear without code changes (hero key: `hero-<page>`, card key: slug of the card title). It also writes `src/data/figma-extracted.json` (text per screen, in reading order) and `public/images/IMAGE-REPORT.json` (every image with its screen and nearby text) so you can fix any image that lands on the wrong card by editing the manifest. The script has not been run against the live Figma API yet, so expect to adjust it.
+## Claims to confirm before launch
+
+All copy avoids invented testimonials, certifications, awards, licence numbers and statistics. Numbers on the site (24/7 response, 10-year lifestyle warranty, +/-0.5 F, under 40 dBA, under 42 dBA, up to 24.5 SEER2) come from the Figma design. Please confirm the business can stand behind these statements:
+
+1. **Service area:** New York City, with Manhattan neighborhoods listed on `/service-areas` (Tribeca, SoHo, Greenwich Village, West Village, Chelsea, Flatiron, Upper East Side, Upper West Side). Edit `SITE.area` in `site.js` and the list in `content.js`.
+2. **Lead times and installation durations** (Services, AC Installation FAQs): written as general ranges.
+3. **Permits and co-op/condo approvals:** stated that AERIS prepares documentation and coordinates filings where required.
+4. **Incentives:** "may be available", with no specific programs named.
+5. **Estimates:** whether site visits and estimates are free (the Request an Estimate FAQ asks visitors to call).
+6. **Portfolio descriptions** for The Ridgeview Estate, TriBeCa Sky Penthouse and Horizon Tech Innovation Hub are general scope descriptions. Add real details when available.
+7. **Phone:** `(800) 582-AERIS` dials +1 800 582 2374. Change `phoneHref` and `phoneE164` in `site.js` if the real number differs.
+8. **Privacy policy** is a sensible template matching how this site handles data. Have it reviewed before launch, and update it if you add analytics.
+9. **Reviews:** the Client Reviews page has no testimonials. When you have real ones (with permission), add a `quotes` section to that page in `content.js`.
 
 ## Deploy to Vercel
 
-1. Create an empty GitHub repo, then:
-   ```
-   git init
-   git add .
-   git commit -m "AERIS website"
-   git branch -M main
-   git remote add origin https://github.com/<you>/<repo>.git
-   git push -u origin main
-   ```
-2. In Vercel: **Add New > Project**, import the repo. Framework is detected as Vite. Deploy.
-3. `vercel.json` already rewrites all routes to the SPA and caches built assets.
+```
+git init
+git add .
+git commit -m "AERIS website"
+git branch -M main
+git remote add origin https://github.com/<you>/<repo>.git
+git push -u origin main
+```
+
+Import the repo in Vercel (framework: Vite). `vercel.json` sets caching and security headers; routes are served from the prerendered files.
 
 ### Contact / estimate form
 
-The form posts to `api/estimate.js` (a Vercel serverless function). It validates and logs by default. To get requests by email, set these in Vercel > Settings > Environment Variables (uses Resend): `RESEND_API_KEY`, `ESTIMATE_TO`, `ESTIMATE_FROM`.
-
-### Before going live
-
-- Replace `YOUR-DOMAIN.com` in `public/robots.txt` and `public/sitemap.xml`.
-- Check the phone link. `(800) 582-AERIS` dials `+1 800 582 2374` (first four letters). Update `SITE.phoneHref` in `src/data/site.js` if the real number differs.
-- Add Open Graph tags and analytics if needed.
+Posts to `api/estimate.js` (a Vercel serverless function). It validates and logs by default. For email delivery set `RESEND_API_KEY`, `ESTIMATE_TO` and `ESTIMATE_FROM` in Vercel.
 
 ## Structure
 
 ```
 api/estimate.js            form endpoint
+scripts/prerender.mjs      writes static HTML, sitemap, robots, 404 after the build
 scripts/figma-extract.mjs  Figma text + image exporter
+src/seo.js                 titles, meta, canonical, JSON-LD
 src/data/site.js           routes, nav, footer, helpers
-src/data/content.js        page content (section types below)
-src/components/            Header, Footer, Page (hero + animation), Sections, HeroScene
+src/data/content.js        all page copy
+src/components/            Header, Footer, Page (hero + motion), Sections, HeroScene
 src/styles/global.css      tokens + all styles
 ```
 
-Section types in `content.js`: `cards` (layouts: grid, feature, portfolio), `paths`, `stats`, `steps`, `faq`, `quotes`, `split`, `prose`, `children` (auto-lists child pages), `cta`, `form`.
+Section types in `content.js`: `cards` (grid, feature, portfolio), `paths`, `stats`, `steps`, `faq`, `quotes`, `split`, `prose`, `doc` (article-style blocks), `chips`, `children` (auto-lists child pages), `cta`, `form`.
