@@ -29,7 +29,8 @@ function GlassNav({ active }) {
   useEffect(() => {
     const id = requestAnimationFrame(() => setReady(true))
     const ro = new ResizeObserver(place)
-    if (list.current) ro.observe(list.current)
+    if (list.current) { ro.observe(list.current); list.current.querySelectorAll('li').forEach((li) => ro.observe(li)) }
+    document.fonts?.ready.then(place)
     return () => { cancelAnimationFrame(id); ro.disconnect() }
   }, [place])
 
@@ -45,9 +46,8 @@ function GlassNav({ active }) {
           aria-hidden="true"
         />
         {NAV.map((n) => (
-          <li key={n.group}>
+          <li key={n.group} ref={(el) => { items.current[n.group] = el }}>
             <Link
-              ref={(el) => { items.current[n.group] = el }}
               to={n.to}
               aria-current={active === n.group ? 'page' : undefined}
               onMouseEnter={() => setHover(n.group)}

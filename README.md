@@ -57,7 +57,7 @@ cp .env.example .env      # add FIGMA_TOKEN (Figma > Settings > Security > perso
 npm run figma:extract
 ```
 
-This writes `src/data/figma-extracted.json` (text per screen, per section, in reading order) and exports images to `public/images/<screen>/`. Then move the text into `content.js` and set `media: { src: '/images/...' }` on cards and split sections. (The script has not been run against the live Figma API yet, so expect to adjust it.)
+This downloads the **original image files** into `public/images/` and writes `public/images/manifest.json`; the site reads that manifest at runtime, so hero photos and card images appear without code changes (hero key: `hero-<page>`, card key: slug of the card title). It also writes `src/data/figma-extracted.json` (text per screen, in reading order) and `public/images/IMAGE-REPORT.json` (every image with its screen and nearby text) so you can fix any image that lands on the wrong card by editing the manifest. The script has not been run against the live Figma API yet, so expect to adjust it.
 
 ## Deploy to Vercel
 

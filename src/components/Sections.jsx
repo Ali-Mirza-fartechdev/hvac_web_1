@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Button from './Button'
 import { childrenOf, byPath } from '../data/site'
 import { prefersReducedMotion } from '../hooks/useReducedMotion'
+import { useImage, slug } from '../hooks/useImages'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -37,6 +38,8 @@ function useTilt() {
 // Without a source it renders a quiet gradient so layout and parallax still work.
 export function Media({ media, index = 0, ratio = '4 / 3' }) {
   const ref = useRef(null)
+  const mapped = useImage(media?.key || slug(media?.label))
+  const src = media?.src || mapped
   useEffect(() => {
     if (prefersReducedMotion() || !ref.current) return undefined
     const inner = ref.current.querySelector('.media-inner')
@@ -46,8 +49,8 @@ export function Media({ media, index = 0, ratio = '4 / 3' }) {
   const hue = 205 + ((index * 17) % 40)
   return (
     <figure ref={ref} className="media" style={{ aspectRatio: ratio, '--hue': hue }}>
-      <div className="media-inner" style={media?.src ? { backgroundImage: `url(${media.src})` } : undefined}>
-        {!media?.src && media?.label && <figcaption>{media.label}</figcaption>}
+      <div className="media-inner" style={src ? { backgroundImage: `url(${src})` } : undefined}>
+        {!src && media?.label && <figcaption>{media.label}</figcaption>}
       </div>
     </figure>
   )

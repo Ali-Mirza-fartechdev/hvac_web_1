@@ -89,12 +89,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .glass-pill {
   position: absolute !important; z-index: 0 !important; top: 4px; bottom: 4px; left: 0; width: var(--w, 0); translate: var(--x, 0) 0; scale: 1; opacity: 0;
   border-radius: 999px; pointer-events: none;
-  background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 14px rgba(9, 22, 41, 0.1), inset 0 1px 0 #fff;
-  -webkit-backdrop-filter: blur(14px) saturate(160%); backdrop-filter: blur(14px) saturate(160%);
+  /* hover: a soft tint, clearly visible on the white glass bar */
+  background: rgba(13, 26, 43, 0.07); border: 1px solid rgba(13, 26, 43, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
-.glass-pill[data-ready='true'] { transition: translate 0.55s var(--spring), width 0.55s var(--spring), opacity 0.25s, background 0.3s, scale 0.2s var(--ease); }
-.glass-pill[data-mode='active'] { background: rgba(255, 255, 255, 0.92); }
+.glass-pill[data-ready='true'] { transition: translate 0.55s var(--spring), width 0.55s var(--spring), opacity 0.25s, background 0.3s, box-shadow 0.3s, border-color 0.3s, scale 0.2s var(--ease); }
+/* current section / pressed: the bright glass lozenge */
+.glass-pill[data-mode='active'] { background: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.82)); border-color: #fff; box-shadow: 0 3px 12px rgba(9, 22, 41, 0.14), 0 0 0 1px rgba(13, 26, 43, 0.05), inset 0 1px 0 #fff; }
 .glass-pill[data-press='true'] { scale: 0.94; }
 
 .header-cta { display: flex; align-items: center; gap: 18px; }
@@ -302,3 +303,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 /* Lenis */
 html.lenis-stopped { overflow: hidden; }
+
+/* hero photos (filled from public/images/manifest.json) */
+.hero-photo { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: center; }
+.hero-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6, 17, 31, 0.55) 0%, rgba(6, 17, 31, 0.35) 40%, rgba(6, 17, 31, 0.8) 100%); }
+.hero-inner.has-photo .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: center; }
+.hero-media { min-width: 0; }
+@media (max-width: 860px) { .hero-inner.has-photo .hero-grid { grid-template-columns: 1fr; } }

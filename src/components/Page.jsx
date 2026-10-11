@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Button from './Button'
-import { Sections } from './Sections'
+import { Sections, Media } from './Sections'
+import { useImage, pathKey } from '../hooks/useImages'
 import { crumbs } from '../data/site'
 import { prefersReducedMotion } from '../hooks/useReducedMotion'
 
@@ -23,8 +24,10 @@ function Title({ text }) {
 function Hero({ hero, path }) {
   const home = hero.variant === 'home'
   const trail = home ? [] : crumbs(path)
+  const photo = useImage('hero-' + pathKey(path))
   return (
-    <section className={`hero ${home ? 'hero-home' : 'hero-inner'}`}>
+    <section className={`hero ${home ? 'hero-home' : 'hero-inner'} ${photo && !home ? 'has-photo' : ''}`}>
+      {photo && home && <div className="hero-photo" style={{ backgroundImage: `url(${photo})` }} aria-hidden="true" />}
       <Suspense fallback={null}><HeroScene light={!home} compact={!home} /></Suspense>
       <div className="container hero-grid">
         <div className="hero-content">
@@ -47,6 +50,7 @@ function Hero({ hero, path }) {
             </div>
           )}
         </div>
+        {photo && !home && <div className="hero-media"><Media media={{ src: photo }} ratio="4 / 3" /></div>}
         {hero.card && (
           <aside className="hero-card glass-dark" aria-label={hero.card.title}>
             <h2>{hero.card.title}</h2>
